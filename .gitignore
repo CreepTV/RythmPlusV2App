@@ -30,5 +30,3 @@ build/
 *.sublime-workspace
 *.sublime-project
 
-# Data
-/data/
