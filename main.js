@@ -1,4 +1,5 @@
 const { app, BrowserWindow, WebContentsView, shell, Menu, ipcMain, clipboard } = require('electron');
+
 const path = require('path');
 const fs = require('fs');
 const discord = require('./discord');
@@ -7,6 +8,7 @@ const TARGET_URL = 'https://v2.rhythm-plus.com/';
 const TITLEBAR_HEIGHT = 40;
 
 let mainWindow;
+let disclaimerWindow;
 let titlebarView;
 let contentView;
 let currentSongId = null;
@@ -146,7 +148,7 @@ function startTitlePolling() {
           currentSongId = null;
         }
 
-        const cleanTitle = raw.replace(' - Rhythm Plus Music Game', '').trim();
+        const cleanTitle = raw.replace(' - Rhythm Plus Music Game', '').replace(' - Play', '').trim();
 
         // Store the song title whenever we have one
         if (cleanTitle && cleanTitle !== 'Rhythm Plus Music Game' && cleanTitle !== 'Rhythm Plus' && cleanTitle !== 'Rhythm+') {
@@ -330,6 +332,9 @@ function createWindow() {
       if (currentUsername) notifyTitlebarProfile(currentUsername, currentPhotoURL);
       if (currentSongId) notifyTitlebarSong(currentSongId);
     }, 300);
+    if (isFirstLaunch()) {
+      setTimeout(() => showDisclaimer(), 600);
+    }
   });
 
   mainWindow.on('maximize', () => titlebarView.webContents.send('maximize-change', true));
@@ -357,6 +362,14 @@ function createWindow() {
     contentView = null;
   });
 }
+
+ipcMain.on('close-disclaimer', () => {
+  if (disclaimerWindow) disclaimerWindow.close();
+});
+
+ipcMain.on('disclaimer-open-url', (_, url) => {
+  shell.openExternal(url);
+});
 
 ipcMain.on('copy-profile-link', () => {
   if (currentUsername) {
@@ -390,6 +403,38 @@ ipcMain.on('window-control', (event, action) => {
     case 'close': mainWindow.close(); break;
   }
 });
+
+function isFirstLaunch() {
+  const flagPath = path.join(app.getPath('userData'), 'disclaimer-accepted');
+  if (fs.existsSync(flagPath)) return false;
+  fs.writeFileSync(flagPath, '1', 'utf-8');
+  return true;
+}
+
+function showDisclaimer() {
+  if (!mainWindow) return;
+  disclaimerWindow = new BrowserWindow({
+    width: 480,
+    height: 550,
+    parent: mainWindow,
+    modal: true,
+    frame: false,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    backgroundColor: '#121212',
+    icon: path.join(__dirname, 'data', 'rythmplus-icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'disclaimer-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  disclaimerWindow.loadFile(path.join(__dirname, 'disclaimer.html'));
+  disclaimerWindow.on('closed', () => { disclaimerWindow = null; });
+}
+
 
 function buildMenu() {
   const template = [

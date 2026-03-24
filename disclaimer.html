@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --pink: #e84393;
+      --purple: #a855f7;
+      --blue: #00b4d8;
+      --gradient: linear-gradient(135deg, var(--pink), var(--purple), var(--blue));
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: linear-gradient(180deg, #1c1c1c 0%, #121212 100%);
+      color: rgba(255, 255, 255, 0.87);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Titlebar ── */
+    .titlebar {
+      height: 40px;
+      background: linear-gradient(180deg, #1c1c1c 0%, #181818 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px 0 14px;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .titlebar-logo {
+      height: 22px;
+      object-fit: contain;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .titlebar-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.3px;
+      pointer-events: none;
+    }
+
+    .titlebar-close {
+      -webkit-app-region: no-drag;
+      width: 42px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: default;
+      outline: none;
+      position: relative;
+    }
+
+    .titlebar-close::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0);
+      border: 1px solid transparent;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .titlebar-close:hover::after {
+      background: rgba(220, 38, 38, 0.75);
+      border-color: rgba(255, 100, 100, 0.25);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 160, 160, 0.18),
+        0 2px 6px rgba(180, 0, 0, 0.3);
+    }
+
+    .titlebar-close:active::after {
+      background: rgba(185, 28, 28, 0.85);
+    }
+
+    .titlebar-close svg {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Content ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .content::-webkit-scrollbar { width: 4px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+    /* ── Warning Banner ── */
+    .warning-banner {
+      background: rgba(232, 67, 147, 0.1);
+      border: 1px solid rgba(232, 67, 147, 0.3);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .warning-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .warning-text {
+      font-size: 13px;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .warning-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Section ── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.35);
+      margin-bottom: 8px;
+    }
+
+    /* ── Credits ── */
+    .credits-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .credits-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .credits-row + .credits-row {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .credits-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .credits-dot.pink  { background: var(--pink); }
+    .credits-dot.purple { background: var(--purple); }
+
+    .credits-row span { flex: 1; }
+    .credits-row a {
+      color: rgba(255, 255, 255, 0.45);
+      text-decoration: none;
+      font-size: 12px;
+      transition: color 0.15s;
+    }
+    .credits-row a:hover { color: rgba(255, 255, 255, 0.85); }
+
+    /* ── Links ── */
+    .links-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .link-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .link-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .link-btn-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .link-btn-icon.game  { background: linear-gradient(135deg, rgba(232,67,147,0.2), rgba(168,85,247,0.2)); }
+    .link-btn-icon.github { background: rgba(255,255,255,0.06); }
+
+    .link-btn-text { display: flex; flex-direction: column; }
+    .link-btn-text strong {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .link-btn-text small {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 1px;
+    }
+
+    /* ── Footer Button ── */
+    .footer {
+      flex-shrink: 0;
+      padding: 0 28px 24px;
+    }
+
+    .btn-confirm {
+      width: 100%;
+      height: 40px;
+      border: none;
+      border-radius: 8px;
+      background: var(--gradient);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: default;
+      letter-spacing: 0.2px;
+      position: relative;
+      overflow: hidden;
+      transition: opacity 0.15s;
+    }
+
+    .btn-confirm::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      transition: background 0.15s;
+    }
+
+    .btn-confirm:hover::after  { background: rgba(0,0,0,0.12); }
+    .btn-confirm:active::after { background: rgba(0,0,0,0.25); }
+
+    .btn-confirm span { position: relative; z-index: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <img class="titlebar-logo" src="./data/rythmplus-logo.png" alt="Rhythm+">
+    <span class="titlebar-title">Hinweis</span>
+    <button class="titlebar-close" id="btn-close" title="Schließen">
+      <svg width="10" height="10" viewBox="0 0 10 10">
+        <line x1="0.5" y1="0.5" x2="9.5" y2="9.5"
+              stroke="rgba(255,255,255,0.75)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="9.5" y1="0.5" x2="0.5" y2="9.5"
+              stroke="rgba(255,255,255,0.75)" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Warning -->
+    <div class="warning-banner">
+      <div class="warning-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                stroke="#e84393" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="12" y1="9" x2="12" y2="13" stroke="#e84393" stroke-width="2" stroke-linecap="round"/>
+          <line x1="12" y1="17" x2="12.01" y2="17" stroke="#e84393" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="warning-text">
+        <strong>Inoffizielle App</strong>
+        Dies ist kein offizielles Produkt des Rhythm+ Teams. Diese Desktop-App steht in
+        keiner Verbindung zu den Entwicklern von Rhythm+ und wird von ihnen weder
+        unterstützt noch autorisiert.
+      </div>
+    </div>
+
+    <!-- Credits -->
+    <div>
+      <div class="section-label">Credits</div>
+      <div class="credits-card">
+        <div class="credits-row">
+          <div class="credits-dot purple"></div>
+          <span>Rhythm+ Originalspiel</span>
+          <a href="#" data-url="https://github.com/henryzt/Rhythm-Plus-Music-Game">von henryzt</a>
+        </div>
+        <div class="credits-row">
+          <div class="credits-dot pink"></div>
+          <span>Desktop-App</span>
+          <a href="#" data-url="https://github.com/CreepTV/RythmPlusV2App">von CreepTV</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Links -->
+    <div>
+      <div class="section-label">Links</div>
+      <div class="links-grid">
+        <a class="link-btn" href="#" data-url="https://v2.rhythm-plus.com/">
+          <div class="link-btn-icon game">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="#e84393" stroke-width="2"/>
+              <polygon points="10,8 16,12 10,16" fill="#a855f7"/>
+            </svg>
+          </div>
+          <div class="link-btn-text">
+            <strong>Rhythm+ V2</strong>
+            <small>v2.rhythm-plus.com</small>
+          </div>
+        </a>
+        <a class="link-btn" href="#" data-url="https://github.com/henryzt/Rhythm-Plus-Music-Game">
+          <div class="link-btn-icon github">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483
+                       0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466
+                       -.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832
+                       .092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688
+                       -.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004
+                       1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651
+                       .64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855
+                       0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484
+                       17.522 2 12 2z"/>
+            </svg>
+          </div>
+          <div class="link-btn-text">
+            <strong>Spiel GitHub</strong>
+            <small>henryzt / Rhythm+</small>
+          </div>
+        </a>
+        <a class="link-btn" href="#" data-url="https://github.com/CreepTV/RythmPlusV2App">
+          <div class="link-btn-icon github">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483
+                       0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466
+                       -.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832
+                       .092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688
+                       -.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004
+                       1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651
+                       .64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855
+                       0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484
+                       17.522 2 12 2z"/>
+            </svg>
+          </div>
+          <div class="link-btn-text">
+            <strong>App GitHub</strong>
+            <small>CreepTV / RythmPlusV2App</small>
+          </div>
+        </a>
+        <a class="link-btn" href="#" data-url="https://rhythm-plus.com/">
+          <div class="link-btn-icon game">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M3 12a9 9 0 1018 0A9 9 0 003 12z" stroke="#00b4d8" stroke-width="2"/>
+              <path d="M3 12h18M12 3a15.3 15.3 0 010 18M12 3a15.3 15.3 0 000 18"
+                    stroke="#00b4d8" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="link-btn-text">
+            <strong>Rhythm+ Website</strong>
+            <small>rhythm-plus.com</small>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <button class="btn-confirm" id="btn-confirm">
+      <span>Verstanden &amp; Fortfahren</span>
+    </button>
+  </div>
+
+  <script>
+    document.getElementById('btn-close').addEventListener('click', () => window.disclaimer.close());
+    document.getElementById('btn-confirm').addEventListener('click', () => window.disclaimer.close());
+
+    document.querySelectorAll('[data-url]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.disclaimer.openExternal(el.dataset.url);
+      });
+    });
+  </script>
+</body>
+</html>
