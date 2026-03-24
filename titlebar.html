@@ -35,9 +35,15 @@
     .logo {
       height: 25px;
       object-fit: contain;
-      pointer-events: none;
+      pointer-events: auto;
       opacity: 0.9;
+      cursor: default;
+      -webkit-app-region: no-drag;
+      border-radius: 4px;
+      transition: opacity 0.15s;
     }
+
+    .logo:hover { opacity: 0.65; }
 
     .center-title {
       position: absolute;
@@ -123,6 +129,33 @@
       background: rgba(185, 28, 28, 0.85);
     }
 
+    .btn.update {
+      width: 28px;
+      height: 28px;
+      margin-left: 2px;
+      padding: 0;
+      -webkit-app-region: no-drag;
+      position: relative;
+    }
+
+    .update-dot {
+      position: absolute;
+      top: 3px;
+      right: 5px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #e84393;
+      z-index: 2;
+      box-shadow: 0 0 5px rgba(232, 67, 147, 0.7);
+      animation: update-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes update-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.55; transform: scale(0.75); }
+    }
+
     .btn.profile {
       width: 28px;
       height: 28px;
@@ -158,6 +191,13 @@
   </div>
 
   <div class="controls">
+        <button class="btn update" id="btn-update" title="Update verfügbar — klicken zum Installieren" style="display:none">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2v14M6 10l6 6 6-6" stroke="rgba(232,67,147,0.9)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 20h16" stroke="rgba(168,85,247,0.9)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="update-dot"></span>
+    </button>
         <button class="btn profile" id="btn-profile" title="Profillink kopieren" style="display:none">
       <img id="profile-avatar" class="profile-avatar" style="display:none" alt="">
       <svg id="icon-user" width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -205,6 +245,14 @@
     document.getElementById('btn-minimize').addEventListener('click', () => window.windowControls.minimize());
     document.getElementById('btn-maximize').addEventListener('click', () => window.windowControls.maximize());
     document.getElementById('btn-close').addEventListener('click', () => window.windowControls.close());
+
+    document.querySelector('.logo').addEventListener('click', () => window.windowControls.navigateHome());
+
+    document.getElementById('btn-update').addEventListener('click', () => window.windowControls.openUpdateWindow());
+
+    window.windowControls.onUpdateAvailable(() => {
+      document.getElementById('btn-update').style.display = 'flex';
+    });
 
     document.getElementById('btn-profile').addEventListener('click', () => {
       window.windowControls.copyProfileLink();

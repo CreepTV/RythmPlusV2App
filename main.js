@@ -1,4 +1,5 @@
 const { app, BrowserWindow, WebContentsView, shell, Menu, ipcMain, clipboard } = require('electron');
+const { autoUpdater } = require('electron-updater');
 
 const path = require('path');
 const fs = require('fs');
@@ -9,6 +10,8 @@ const TITLEBAR_HEIGHT = 40;
 
 let mainWindow;
 let disclaimerWindow;
+let updateWindow;
+let pendingUpdateInfo = null;
 let titlebarView;
 let contentView;
 let currentSongId = null;
@@ -363,6 +366,30 @@ function createWindow() {
   });
 }
 
+ipcMain.on('open-update-window', () => showUpdateWindow());
+
+ipcMain.on('update-download', () => {
+  autoUpdater.downloadUpdate().catch((err) => {
+    console.error('[Updater] Download-Fehler:', err.message);
+  });
+});
+
+ipcMain.on('update-install', () => {
+  autoUpdater.quitAndInstall(false, true);
+});
+
+ipcMain.on('close-update-window', () => {
+  if (updateWindow) updateWindow.close();
+});
+
+ipcMain.on('update-open-url', (_, url) => {
+  shell.openExternal(url);
+});
+
+ipcMain.on('navigate-home', () => {
+  if (contentView) contentView.webContents.loadURL(TARGET_URL);
+});
+
 ipcMain.on('close-disclaimer', () => {
   if (disclaimerWindow) disclaimerWindow.close();
 });
@@ -436,6 +463,78 @@ function showDisclaimer() {
   disclaimerWindow.on('closed', () => { disclaimerWindow = null; });
 }
 
+
+function setupAutoUpdater() {
+  if (!app.isPackaged) {
+    console.log('[Updater] Dev-Modus – Auto-Update deaktiviert');
+    return;
+  }
+
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('[Updater] Update verfügbar:', info.version);
+    pendingUpdateInfo = { ...info, currentVersion: app.getVersion() };
+    if (titlebarView) {
+      titlebarView.webContents.send('update-available');
+    }
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    if (updateWindow) {
+      updateWindow.webContents.send('download-progress', progress);
+    }
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    console.log('[Updater] Update heruntergeladen');
+    if (updateWindow) {
+      updateWindow.webContents.send('update-downloaded');
+    }
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[Updater] Fehler:', err.message);
+  });
+
+  // Beim Start nach Updates suchen (mit Verzögerung)
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000);
+}
+
+function showUpdateWindow() {
+  if (updateWindow) { updateWindow.focus(); return; }
+  if (!mainWindow) return;
+
+  updateWindow = new BrowserWindow({
+    width: 420,
+    height: 430,
+    parent: mainWindow,
+    modal: true,
+    frame: false,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    backgroundColor: '#121212',
+    icon: path.join(__dirname, 'data', 'rythmplus-icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'update-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  updateWindow.loadFile(path.join(__dirname, 'update.html'));
+
+  updateWindow.webContents.once('did-finish-load', () => {
+    if (pendingUpdateInfo) {
+      updateWindow.webContents.send('update-info', pendingUpdateInfo);
+    }
+  });
+
+  updateWindow.on('closed', () => { updateWindow = null; });
+}
 
 function buildMenu() {
   const template = [
@@ -535,6 +634,7 @@ app.whenReady().then(() => {
   buildMenu();
   createWindow();
   discord.connect();
+  setupAutoUpdater();
 
   // When another user joins via "Ask to Join" → navigate to that song
   discord.setJoinCallback((songId) => {

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --pink: #e84393;
+      --purple: #a855f7;
+      --blue: #00b4d8;
+      --gradient: linear-gradient(135deg, var(--pink), var(--purple), var(--blue));
+    }
+
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+
+    body {
+      background: linear-gradient(180deg, #1c1c1c 0%, #121212 100%);
+      color: rgba(255, 255, 255, 0.87);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Titlebar ── */
+    .titlebar {
+      height: 40px;
+      background: linear-gradient(180deg, #1c1c1c 0%, #181818 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .titlebar-logo {
+      height: 22px;
+      object-fit: contain;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .titlebar-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.3px;
+      pointer-events: none;
+    }
+
+    .titlebar-close {
+      -webkit-app-region: no-drag;
+      width: 42px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: default;
+      outline: none;
+      position: relative;
+    }
+
+    .titlebar-close::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 6px;
+      background: rgba(255,255,255,0);
+      border: 1px solid transparent;
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .titlebar-close:hover::after {
+      background: rgba(220, 38, 38, 0.75);
+      border-color: rgba(255, 100, 100, 0.25);
+      box-shadow: inset 0 1px 0 rgba(255,160,160,0.18), 0 2px 6px rgba(180,0,0,0.3);
+    }
+
+    .titlebar-close:active::after { background: rgba(185, 28, 28, 0.85); }
+    .titlebar-close svg { position: relative; z-index: 1; }
+
+    /* ── Content ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .content::-webkit-scrollbar { width: 4px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+    /* ── Header ── */
+    .update-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .update-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(232,67,147,0.15), rgba(168,85,247,0.15));
+      border: 1px solid rgba(168,85,247,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .update-header-text h2 {
+      font-size: 15px;
+      font-weight: 700;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .update-header-text p {
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 2px;
+    }
+
+    /* ── Version badge ── */
+    .version-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .version-badge {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      font-family: 'Consolas', monospace;
+      flex: 1;
+      text-align: center;
+    }
+
+    .version-badge.new {
+      background: linear-gradient(135deg, rgba(232,67,147,0.12), rgba(168,85,247,0.12));
+      border-color: rgba(168,85,247,0.3);
+      color: rgba(255,255,255,0.9);
+    }
+
+    .version-arrow { color: rgba(255,255,255,0.3); font-size: 14px; }
+
+    /* ── Changelog ── */
+    .changelog-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.5);
+      max-height: 90px;
+      overflow-y: auto;
+    }
+
+    .changelog-box::-webkit-scrollbar { width: 3px; }
+    .changelog-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* ── Progress ── */
+    .progress-wrap { display: none; flex-direction: column; gap: 6px; }
+    .progress-wrap.visible { display: flex; }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .progress-track {
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--gradient);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      flex-shrink: 0;
+      padding: 0 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      width: 100%;
+      height: 38px;
+      border: none;
+      border-radius: 8px;
+      background: var(--gradient);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover::after  { background: rgba(0,0,0,0.12); }
+    .btn-primary:active::after { background: rgba(0,0,0,0.25); }
+    .btn-primary:disabled { opacity: 0.45; pointer-events: none; }
+    .btn-primary span { position: relative; z-index: 1; }
+
+    .btn-secondary {
+      width: 100%;
+      height: 34px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      background: transparent;
+      color: rgba(255,255,255,0.45);
+      font-size: 12px;
+      cursor: default;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.7);
+    }
+
+    .release-link {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255,255,255,0.25);
+      cursor: default;
+    }
+
+    .release-link a {
+      color: rgba(255,255,255,0.4);
+      text-decoration: none;
+    }
+
+    .release-link a:hover { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <img class="titlebar-logo" src="./data/rythmplus-logo.png" alt="Rhythm+">
+    <span class="titlebar-title">Update verfügbar</span>
+    <button class="titlebar-close" id="btn-close" title="Schließen">
+      <svg width="10" height="10" viewBox="0 0 10 10">
+        <line x1="0.5" y1="0.5" x2="9.5" y2="9.5" stroke="rgba(255,255,255,0.75)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="9.5" y1="0.5" x2="0.5" y2="9.5" stroke="rgba(255,255,255,0.75)" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <div class="update-header">
+      <div class="update-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2v14M6 10l6 6 6-6" stroke="url(#g1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 20h16" stroke="url(#g2)" stroke-width="2" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="g1" x1="6" y1="2" x2="18" y2="16" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e84393"/><stop offset="0.5" stop-color="#a855f7"/><stop offset="1" stop-color="#00b4d8"/>
+            </linearGradient>
+            <linearGradient id="g2" x1="4" y1="20" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#e84393"/><stop offset="1" stop-color="#00b4d8"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="update-header-text">
+        <h2>Neue Version verfügbar</h2>
+        <p id="subtitle">Lade jetzt das neueste Update herunter</p>
+      </div>
+    </div>
+
+    <div class="version-row">
+      <div class="version-badge" id="v-current">v–</div>
+      <span class="version-arrow">→</span>
+      <div class="version-badge new" id="v-new">v–</div>
+    </div>
+
+    <div class="changelog-box" id="changelog">Lade Release-Infos…</div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-label">
+        <span>Download läuft…</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <button class="btn-primary" id="btn-action">
+      <span id="btn-action-label">Herunterladen</span>
+    </button>
+    <button class="btn-secondary" id="btn-later">Später</button>
+    <div class="release-link">
+      <a href="#" id="release-link">Release auf GitHub ansehen</a>
+    </div>
+  </div>
+
+  <script>
+    const { app } = require && require('electron') || {};
+
+    let state = 'idle'; // idle | downloading | downloaded
+
+    window.updater.onInfo((info) => {
+      document.getElementById('v-current').textContent = `v${info.currentVersion}`;
+      document.getElementById('v-new').textContent = `v${info.version}`;
+      if (info.releaseNotes) {
+        const notes = typeof info.releaseNotes === 'string'
+          ? info.releaseNotes.replace(/<[^>]+>/g, '').trim()
+          : JSON.stringify(info.releaseNotes);
+        document.getElementById('changelog').textContent = notes || 'Keine Beschreibung vorhanden.';
+      } else {
+        document.getElementById('changelog').textContent = 'Keine Beschreibung vorhanden.';
+      }
+      const releaseUrl = `https://github.com/CreepTV/RythmPlusV2App/releases/tag/v${info.version}`;
+      document.getElementById('release-link').dataset.url = releaseUrl;
+    });
+
+    window.updater.onProgress((progress) => {
+      if (state !== 'downloading') {
+        state = 'downloading';
+        document.getElementById('progress-wrap').classList.add('visible');
+        document.getElementById('btn-action').disabled = true;
+        document.getElementById('btn-action-label').textContent = 'Wird heruntergeladen…';
+        document.getElementById('subtitle').textContent = 'Bitte warten…';
+      }
+      const pct = Math.round(progress.percent || 0);
+      document.getElementById('progress-bar').style.width = pct + '%';
+      document.getElementById('progress-pct').textContent = pct + '%';
+    });
+
+    window.updater.onDownloaded(() => {
+      state = 'downloaded';
+      document.getElementById('progress-wrap').classList.remove('visible');
+      document.getElementById('btn-action').disabled = false;
+      document.getElementById('btn-action-label').textContent = 'Installieren & Neu starten';
+      document.getElementById('subtitle').textContent = 'Download abgeschlossen — bereit zur Installation';
+      document.getElementById('btn-later').textContent = 'Später installieren';
+    });
+
+    document.getElementById('btn-action').addEventListener('click', () => {
+      if (state === 'downloaded') {
+        window.updater.install();
+      } else {
+        window.updater.download();
+      }
+    });
+
+    document.getElementById('btn-later').addEventListener('click', () => window.updater.close());
+    document.getElementById('btn-close').addEventListener('click', () => window.updater.close());
+
+    document.getElementById('release-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = e.currentTarget.dataset.url;
+      if (url) window.updater.openExternal(url);
+    });
+  </script>
+</body>
+</html>

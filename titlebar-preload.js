@@ -7,11 +7,13 @@ contextBridge.exposeInMainWorld('windowControls', {
   onMaximizeChange: (cb) => ipcRenderer.on('maximize-change', (_, isMaximized) => cb(isMaximized)),
   onCurrentSong: (cb) => ipcRenderer.on('current-song', (_, song) => cb(song)),
   onDisplayTitle: (cb) => ipcRenderer.on('display-title', (_, title) => cb(title)),
-  navigateToSong: () => ipcRenderer.send('navigate-to-song'),
+  navigateHome: () => ipcRenderer.send('navigate-home'),
   copySongLink: () => ipcRenderer.send('copy-song-link'),
   copyProfileLink: () => ipcRenderer.send('copy-profile-link'),
   onProfileUpdate: (cb) => ipcRenderer.on('profile-update', (_, data) => {
     cb(data);
     if (data?.username) ipcRenderer.send('profile-ack');
   }),
+  onUpdateAvailable: (cb) => ipcRenderer.on('update-available', () => cb()),
+  openUpdateWindow: () => ipcRenderer.send('open-update-window'),
 });

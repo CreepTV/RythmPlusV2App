@@ -18,6 +18,13 @@
     "appId": "com.rhythmplus.v2",
     "productName": "Rhythm Plus V2",
     "icon": "data/rythmplus-icon.png",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CreepTV",
+        "repo": "RythmPlusV2App"
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "data/rythmplus-icon.png"
@@ -32,6 +39,7 @@
     }
   },
   "dependencies": {
-    "discord-rpc": "^4.0.1"
+    "discord-rpc": "^4.0.1",
+    "electron-updater": "^6.3.9"
   }
 }
