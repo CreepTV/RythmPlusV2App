@@ -413,6 +413,7 @@ function isFirstLaunch() {
 
 function showDisclaimer() {
   if (!mainWindow) return;
+  if (disclaimerWindow) { disclaimerWindow.focus(); return; }
   disclaimerWindow = new BrowserWindow({
     width: 480,
     height: 550,
@@ -513,6 +514,11 @@ function buildMenu() {
     {
       label: 'App',
       submenu: [
+        {
+          label: 'About / Credits',
+          accelerator: 'CmdOrCtrl+Shift+O',
+          click: () => showDisclaimer(),
+        },
         {
           label: 'Quit',
           accelerator: 'CmdOrCtrl+Q',
