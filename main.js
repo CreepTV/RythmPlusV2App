@@ -1,5 +1,6 @@
 const { app, BrowserWindow, WebContentsView, shell, Menu, ipcMain, clipboard } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const discord = require('./discord');
 
 const TARGET_URL = 'https://v2.rhythm-plus.com/';
@@ -246,6 +247,21 @@ function handleNavigation(url) {
   } catch (e) {}
 }
 
+const CUSTOM_CSS_PATH = path.join(__dirname, 'style.css');
+
+function injectCustomCSS() {
+  try {
+    const css = fs.readFileSync(CUSTOM_CSS_PATH, 'utf-8');
+    if (css.trim()) {
+      contentView.webContents.insertCSS(css).then(() => {
+        console.log('[RythmPlus] Custom CSS injected (' + css.length + ' bytes)');
+      });
+    }
+  } catch (e) {
+    console.warn('[RythmPlus] Could not inject custom CSS:', e.message);
+  }
+}
+
 function layoutViews() {
   if (!mainWindow || !titlebarView || !contentView) return;
   const [width, height] = mainWindow.getContentSize();
@@ -296,6 +312,10 @@ function createWindow() {
 
   contentView.webContents.on('did-navigate', (_, url) => handleNavigation(url));
   contentView.webContents.on('did-navigate-in-page', (_, url) => handleNavigation(url));
+
+  contentView.webContents.on('dom-ready', injectCustomCSS);
+  contentView.webContents.on('did-navigate', () => setTimeout(injectCustomCSS, 500));
+  contentView.webContents.on('did-navigate-in-page', () => setTimeout(injectCustomCSS, 500));
 
   layoutViews();
 

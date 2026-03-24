@@ -6,78 +6,88 @@
     transform: scale(.7) !important;
 }
 
+/* Button base — transparent like .btn in titlebar */
 .main-button[data-v-1361bb6c] {
-    background: linear-gradient(180deg, #e88a10 0%, #f5a623 33%, #c23d00 66%, #e88a10 100%) !important;
-    background-size: 100% 300% !important;
-    animation: gradient-shift-1361bb6c 4s linear infinite !important;
-    border: 1px solid rgba(255, 160, 60, 0.25) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 200, 120, 0.3),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-        0 4px 12px rgba(194, 61, 0, 0.4),
-        0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 50px !important;
     box-sizing: border-box !important;
     color: #fff !important;
     cursor: pointer !important;
-    font-size: 22px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
-    letter-spacing: 1.3px !important;
+    letter-spacing: 2px !important;
     max-width: 300px !important;
-    min-height: 60px !important;
+    min-height: 52px !important;
     min-width: 150px !important;
     outline: none !important;
-    padding: 10px !important;
+    overflow: visible !important;
+    padding: 14px 36px !important;
     position: relative !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
     text-transform: uppercase !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    transition: box-shadow 0.2s ease !important;
     width: 100% !important;
+    /* text above ::after */
+    isolation: isolate !important;
+    animation: btn-idle-pulse 2.5s ease-in-out infinite !important;
 }
 
-.main-button[data-v-1361bb6c],.main-button[data-v-1361bb6c]:before {
-    border-radius: 1000px !important;
-    transition: transform .3s ease-in-out, box-shadow .3s ease-in-out, opacity .3s ease-in-out !important;
+.main-button[data-v-1361bb6c]:hover,
+.main-button[data-v-1361bb6c]:focus {
+    animation: none !important;
+    box-shadow: 0px 3px 20px 2px rgba(159, 80, 220, 0.515) !important;
 }
 
-.main-button[data-v-1361bb6c]:before {
-    border: 2px solid #ff9100 !important;
-    box-shadow: 0 0 60px #ff5e00a3 !important;
-    box-sizing: content-box !important;
+/* colored surface — mirrors titlebar .btn::after exactly, orange tinted */
+.main-button[data-v-1361bb6c]::after {
+    animation: none !important;
+    background: rgba(200, 68, 0, 0.82) !important;
+    border-color: rgba(255, 140, 50, 0.28) !important;
+    border-radius: 50px !important;
+    border-style: solid !important;
+    border-width: 1px !important;
+    bottom: 0 !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 215, 110, 0.28),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+        0 2px 6px rgba(0, 0, 0, 0.35) !important;
     content: "" !important;
-    left: 50% !important;
-    max-width: 312px !important;
-    min-height: 70px !important;
-    opacity: 0 !important;
+    display: block !important;
+    left: 0 !important;
     position: absolute !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: calc(100% + 10px) !important;
+    right: 0 !important;
+    top: 0 !important;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+    width: auto !important;
+    z-index: -1 !important;
 }
 
-.main-button[data-v-1361bb6c]:focus,.main-button[data-v-1361bb6c]:hover {
-    color: #fff !important;
-    transform: translateY(-3px) !important;
+.main-button[data-v-1361bb6c]:hover::after,
+.main-button[data-v-1361bb6c]:focus::after {
+    background: rgba(230, 88, 10, 0.9) !important;
+    border-color: rgba(255, 160, 70, 0.38) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 200, 120, 0.35),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-        0 6px 20px rgba(194, 61, 0, 0.5),
-        0 2px 6px rgba(0, 0, 0, 0.3) !important;
+        inset 0 1px 0 rgba(255, 225, 130, 0.32),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.28) !important;
+    left: 0 !important;
 }
 
-.main-button[data-v-1361bb6c]:focus:before,.main-button[data-v-1361bb6c]:hover:before {
-    opacity: 1 !important;
+.main-button[data-v-1361bb6c]:active::after {
+    background: rgba(165, 45, 0, 0.92) !important;
+    border-color: rgba(255, 120, 40, 0.2) !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.45) !important;
 }
 
-.main-button[data-v-1361bb6c]:active {
-    transform: translateY(0px) !important;
-    box-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.35),
-        inset 0 -1px 0 rgba(255, 200, 120, 0.1),
-        0 1px 3px rgba(0, 0, 0, 0.3) !important;
+/* no ::before ring needed — keep wrap ring only */
+.main-button[data-v-1361bb6c]::before {
+    display: none !important;
 }
 
+/* pulsing ring behind button — subtle, like titlebar border styling */
 .wrap[data-v-1361bb6c]:after {
-    animation: ring-1361bb6c 1s infinite !important;
-    border: 2px solid rgba(255, 166, 0, 0.6) !important;
+    animation: ring-1361bb6c 1.8s cubic-bezier(.4,0,.6,1) infinite !important;
+    border: 1px solid rgba(230, 88, 10, 0.4) !important;
     border-radius: 100% !important;
     content: "" !important;
     height: 60px !important;
@@ -87,63 +97,39 @@
     top: 50% !important;
     transform: translate(-50%,-50%) scale(.5) !important;
     width: 60px !important;
-    will-change: transform,opacity !important;
+    will-change: transform, opacity !important;
     z-index: -1 !important;
 }
 
-.colored .main-button[data-v-1361bb6c] {
-    background: linear-gradient(70deg, #f79533,#f37055,#ef4e7b,#a166ab,#5073b8,#1098ad,#07b39b,#6fba82) !important;
-    background-size: 100% 300% !important;
-    animation: gradient-shift-1361bb6c 4s linear infinite !important;
-    border: 1px solid rgba(180, 130, 220, 0.3) !important;
+/* ── colored variant (rainbow) ── */
+.colored .main-button[data-v-1361bb6c]::after {
+    background: linear-gradient(135deg, rgba(247,149,51,.85), rgba(239,78,123,.85), rgba(80,115,184,.85), rgba(7,179,155,.85)) !important;
+    border-color: rgba(180, 130, 220, 0.25) !important;
     box-shadow:
-        inset 0 1px 0 rgba(220, 180, 255, 0.25),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-        0 4px 12px rgba(161, 102, 171, 0.4),
-        0 1px 3px rgba(0, 0, 0, 0.3) !important;
+        inset 0 1px 0 rgba(255, 230, 180, 0.25),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+        0 2px 6px rgba(0, 0, 0, 0.35) !important;
 }
 
-.colored .main-button[data-v-1361bb6c]:before {
-    border: 1px solid rgba(7, 179, 155, 0.4) !important;
+.colored .main-button[data-v-1361bb6c]:hover::after,
+.colored .main-button[data-v-1361bb6c]:focus::after {
+    background: linear-gradient(135deg, rgba(247,149,51,.95), rgba(239,78,123,.95), rgba(80,115,184,.95), rgba(7,179,155,.95)) !important;
+    border-color: rgba(200, 150, 240, 0.35) !important;
     box-shadow:
-        0 0 30px rgba(16, 152, 173, 0.3),
-        inset 0 1px 0 rgba(180, 240, 220, 0.15) !important;
-}
-
-.colored .main-button[data-v-1361bb6c]:hover,
-.colored .main-button[data-v-1361bb6c]:focus {
-    box-shadow:
-        inset 0 1px 0 rgba(220, 180, 255, 0.3),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-        0 6px 20px rgba(161, 102, 171, 0.5),
-        0 2px 6px rgba(0, 0, 0, 0.3) !important;
+        inset 0 1px 0 rgba(255, 230, 180, 0.3),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+        0 4px 10px rgba(0, 0, 0, 0.45) !important;
 }
 
 .colored[data-v-1361bb6c]:after {
-    border: 1.5px solid rgba(239, 78, 123, 0.6) !important;
-}
-
-.main-button[data-v-1361bb6c]:focus:after,.main-button[data-v-1361bb6c]:hover:after {
-    animation: none !important;
-    display: none !important;
-}
-
-@keyframes gradient-shift-1361bb6c {
-    0% {
-        background-position: 0% 0%;
-    }
-    100% {
-    100% {
-        background-position: 0% 100%;
-    }
+    border: 1px solid rgba(239, 78, 123, 0.4) !important;
 }
 
 @keyframes ring-1361bb6c {
     0% {
-        opacity: 1;
+        opacity: .7;
         transform: translate(-50%,-50%) scale(.5)
     }
-
     to {
         opacity: 0;
         transform: translate(-50%,-50%) scale(5)
@@ -153,4 +139,15 @@
 .no-ripple[data-v-1361bb6c]:after {
     animation: none !important;
     display: none !important;
+}
+
+@keyframes btn-idle-pulse {
+    0%, 100% {
+        box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.111);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 20px 4px rgba(255, 255, 255, 0.227);
+        transform: scale(1.020);
+    }
 }
