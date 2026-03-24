@@ -1,6 +1,9 @@
 const { app, BrowserWindow, WebContentsView, shell, Menu, ipcMain, clipboard } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const discord = require('./discord');
+
+const CUSTOM_CSS_PATH = path.join(__dirname, 'style.css');
 
 const TARGET_URL = 'https://v2.rhythm-plus.com/';
 const TITLEBAR_HEIGHT = 40;
@@ -292,6 +295,24 @@ function createWindow() {
   });
   mainWindow.contentView.addChildView(contentView);
   contentView.webContents.loadURL(TARGET_URL);
+
+  // Inject custom CSS into the content view
+  function injectCustomCSS() {
+    try {
+      const css = fs.readFileSync(CUSTOM_CSS_PATH, 'utf-8');
+      if (css.trim()) {
+        contentView.webContents.insertCSS(css).then(() => {
+          console.log('[RythmPlus] Custom CSS injected (' + css.length + ' bytes)');
+        });
+      }
+    } catch (e) {
+      console.warn('[RythmPlus] Could not inject custom CSS:', e.message);
+    }
+  }
+  contentView.webContents.on('dom-ready', injectCustomCSS);
+  contentView.webContents.on('did-navigate', () => setTimeout(injectCustomCSS, 500));
+  contentView.webContents.on('did-navigate-in-page', () => setTimeout(injectCustomCSS, 500));
+
   startTitlePolling();
 
   contentView.webContents.on('did-navigate', (_, url) => handleNavigation(url));
