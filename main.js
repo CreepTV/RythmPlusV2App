@@ -8,12 +8,77 @@ const discord = require('./discord');
 const TARGET_URL = 'https://v2.rhythm-plus.com/';
 const TITLEBAR_HEIGHT = 40;
 
+// Clear corrupted Chromium cache/quota databases before app starts
+;[
+  path.join(app.getPath('userData'), 'Default', 'QuotaManager'),
+  path.join(app.getPath('userData'), 'GrShaderCache'),
+  path.join(app.getPath('userData'), 'ShaderCache'),
+].forEach(p => {
+  try { fs.rmSync(p, { recursive: true, force: true }); } catch (_) {}
+});
+
 let mainWindow;
 let disclaimerWindow;
 let updateWindow;
+let menuPopupWindow = null;
+let settingsWindow = null;
 let pendingUpdateInfo = null;
 let titlebarView;
 let contentView;
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
+
+function loadSettings() {
+  try { return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8')); } catch { return { compactHud: false }; }
+}
+
+function saveSettings(settings) {
+  try { fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2)); } catch (e) {
+    console.warn('[RythmPlus] Could not save settings:', e.message);
+  }
+}
+
+let appSettings = { compactHud: false };
+
+// CSS injected when Compact HUD is enabled
+const COMPACT_HUD_CSS = `
+.score[data-v-09515fd5] {
+    bottom: none !important;
+    display: flex;
+    flex-direction: column;
+    font-family: Dosis,sans-serif;
+    font-size: 1.875rem;
+    left: 20% !important;
+    top: 6rem;
+    line-height: 2.25rem;
+    opacity: .5;
+    position: fixed;
+    text-shadow: 0 0 3px rgba(0,0,0,.315)
+}
+@media (min-width: 1500px) {
+  .score[data-v-09515fd5] { left: 25% !important; }
+}
+@media (min-width: 1800px) {
+  .score[data-v-09515fd5] { left: 30% !important; }
+}
+@media (max-width: 1180px) {
+  .score[data-v-09515fd5] { left: 15% !important; }
+}
+`;
+
+let compactHudCssKey = null;
+
+async function applyCompactHud(enabled) {
+  if (!contentView) return;
+  if (compactHudCssKey) {
+    try { await contentView.webContents.removeInsertedCSS(compactHudCssKey); } catch (_) {}
+    compactHudCssKey = null;
+  }
+  if (enabled) {
+    try { compactHudCssKey = await contentView.webContents.insertCSS(COMPACT_HUD_CSS); } catch (_) {}
+  }
+}
 
 // Tracks game preview windows: titlebarWebContentsId → { win, gameContentView, gameTitlebarView }
 const gameWindows = new Map();
@@ -108,6 +173,7 @@ function startTitlePolling() {
     if (!contentView) return;
     try {
       const url = contentView.webContents.getURL();
+      if (!url || url === 'about:blank') return;
       const pathname = new URL(url).pathname;
 
       // Probe for username once until found
@@ -265,6 +331,11 @@ function injectCustomCSS() {
         console.log('[RythmPlus] Custom CSS injected (' + css.length + ' bytes)');
       });
     }
+    // Page reloaded — CSS keys are gone; reapply compact HUD if enabled
+    compactHudCssKey = null;
+    if (appSettings.compactHud) {
+      contentView.webContents.insertCSS(COMPACT_HUD_CSS).then(key => { compactHudCssKey = key; });
+    }
   } catch (e) {
     console.warn('[RythmPlus] Could not inject custom CSS:', e.message);
   }
@@ -389,12 +460,14 @@ function createWindow() {
   titlebarView.webContents.loadFile(path.join(__dirname, 'titlebar.html'));
 
   // Content view (rhythm-plus.com)
+  // Use a persistent partition so Service Workers and storage work correctly
   contentView = new WebContentsView({
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       autoplayPolicy: 'no-user-gesture-required',
+      partition: 'persist:rhythmplus',
     },
   });
   mainWindow.contentView.addChildView(contentView);
@@ -403,6 +476,18 @@ function createWindow() {
 
   contentView.webContents.on('did-navigate', (_, url) => handleNavigation(url));
   contentView.webContents.on('did-navigate-in-page', (_, url) => handleNavigation(url));
+
+  // Block Enter key on /menu/* pages
+  contentView.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && input.key === 'Enter') {
+      try {
+        const url = contentView.webContents.getURL();
+        if (url && new URL(url).pathname.startsWith('/menu')) {
+          event.preventDefault();
+        }
+      } catch (_) {}
+    }
+  });
 
   contentView.webContents.on('dom-ready', injectCustomCSS);
   contentView.webContents.on('did-navigate', () => setTimeout(injectCustomCSS, 500));
@@ -531,6 +616,71 @@ ipcMain.on('window-control', (event, action) => {
       break;
     case 'close': win.close(); break;
   }
+});
+
+// ── Menu popup ────────────────────────────────────────────────────────────────
+ipcMain.on('open-menu', (_, x) => {
+  if (menuPopupWindow) { menuPopupWindow.close(); return; }
+  const [wx, wy] = mainWindow.getPosition();
+  menuPopupWindow = new BrowserWindow({
+    x: wx + Math.round(x),
+    y: wy + TITLEBAR_HEIGHT,
+    width: 180,
+    height: 54,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    parent: mainWindow,
+    webPreferences: {
+      preload: path.join(__dirname, 'menu-popup-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  menuPopupWindow.loadFile(path.join(__dirname, 'menu-popup.html'));
+  menuPopupWindow.on('blur', () => { if (menuPopupWindow) { menuPopupWindow.close(); } });
+  menuPopupWindow.on('closed', () => { menuPopupWindow = null; });
+});
+
+// ── Settings window ───────────────────────────────────────────────────────────
+ipcMain.on('open-settings', () => {
+  if (menuPopupWindow) { menuPopupWindow.close(); menuPopupWindow = null; }
+  if (settingsWindow) { settingsWindow.focus(); return; }
+  settingsWindow = new BrowserWindow({
+    width: 480,
+    height: 340,
+    frame: false,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    parent: mainWindow,
+    show: false,
+    backgroundColor: '#121212',
+    icon: path.join(__dirname, 'data', 'rythmplus-icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'settings-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
+  settingsWindow.once('ready-to-show', () => settingsWindow.show());
+  settingsWindow.on('closed', () => { settingsWindow = null; });
+});
+
+ipcMain.on('close-settings', () => {
+  if (settingsWindow) settingsWindow.close();
+});
+
+ipcMain.handle('get-settings', () => loadSettings());
+
+ipcMain.on('set-settings', (_, settings) => {
+  appSettings = { ...appSettings, ...settings };
+  saveSettings(appSettings);
+  applyCompactHud(appSettings.compactHud);
 });
 
 function isFirstLaunch() {
@@ -749,6 +899,7 @@ function buildMenu() {
 }
 
 app.whenReady().then(() => {
+  appSettings = loadSettings();
   buildMenu();
   createWindow();
   discord.connect();

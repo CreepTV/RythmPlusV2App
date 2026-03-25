@@ -164,6 +164,14 @@
       -webkit-app-region: no-drag;
     }
 
+    .btn.menu-btn {
+      width: 28px;
+      height: 28px;
+      margin-left: 4px;
+      padding: 0;
+      -webkit-app-region: no-drag;
+    }
+
     .profile-avatar {
       width: 20px;
       height: 20px;
@@ -183,7 +191,13 @@
 <body>
   <div class="logo-area">
     <img class="logo" src="./data/rythmplus-logo.png" alt="Rhythm+">
-
+    <button class="btn menu-btn" id="btn-menu" title="Menü">
+      <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+        <rect y="0" width="12" height="1.5" rx="0.75" fill="rgba(255,255,255,0.7)"/>
+        <rect y="4.25" width="12" height="1.5" rx="0.75" fill="rgba(255,255,255,0.7)"/>
+        <rect y="8.5" width="12" height="1.5" rx="0.75" fill="rgba(255,255,255,0.7)"/>
+      </svg>
+    </button>
   </div>
 
   <div class="center-title" id="song-title" style="display:none">
@@ -249,6 +263,11 @@
     document.querySelector('.logo').addEventListener('click', () => window.windowControls.navigateHome());
 
     document.getElementById('btn-update').addEventListener('click', () => window.windowControls.openUpdateWindow());
+
+    document.getElementById('btn-menu').addEventListener('click', (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      window.windowControls.openMenu(Math.round(rect.left));
+    });
 
     window.windowControls.onUpdateAvailable(() => {
       document.getElementById('btn-update').style.display = 'flex';

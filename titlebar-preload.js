@@ -16,4 +16,5 @@ contextBridge.exposeInMainWorld('windowControls', {
   }),
   onUpdateAvailable: (cb) => ipcRenderer.on('update-available', () => cb()),
   openUpdateWindow: () => ipcRenderer.send('open-update-window'),
+  openMenu: (x) => ipcRenderer.send('open-menu', x),
 });
