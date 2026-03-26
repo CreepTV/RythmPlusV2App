@@ -344,7 +344,8 @@
   </div>
 
   <script>
-    let state = 'idle'; // idle | downloading | downloaded
+    let state = 'idle'; // idle | downloading | downloaded | error
+    let releaseUrl = '';
 
     window.updater.onInfo((info) => {
       document.getElementById('v-current').textContent = `v${info.currentVersion}`;
@@ -357,7 +358,7 @@
       } else {
         document.getElementById('changelog').textContent = 'Keine Beschreibung vorhanden.';
       }
-      const releaseUrl = `https://github.com/CreepTV/RythmPlusV2App/releases/tag/v${info.version}`;
+      releaseUrl = `https://github.com/CreepTV/RythmPlusV2App/releases/tag/v${info.version}`;
       document.getElementById('release-link').dataset.url = releaseUrl;
     });
 
@@ -383,10 +384,24 @@
       document.getElementById('btn-later').textContent = 'Später installieren';
     });
 
+    window.updater.onError((msg) => {
+      state = 'error';
+      document.getElementById('progress-wrap').classList.remove('visible');
+      document.getElementById('btn-action').disabled = false;
+      document.getElementById('btn-action-label').textContent = 'Auf GitHub herunterladen';
+      document.getElementById('subtitle').textContent = 'Auto-Download fehlgeschlagen';
+      document.getElementById('changelog').textContent = `Fehler: ${msg}\n\nBitte lade das Update manuell von GitHub herunter.`;
+    });
+
     document.getElementById('btn-action').addEventListener('click', () => {
       if (state === 'downloaded') {
         window.updater.install();
-      } else {
+      } else if (state === 'error') {
+        if (releaseUrl) window.updater.openExternal(releaseUrl);
+      } else if (state === 'idle') {
+        state = 'starting';
+        document.getElementById('btn-action').disabled = true;
+        document.getElementById('btn-action-label').textContent = 'Verbinde…';
         window.updater.download();
       }
     });

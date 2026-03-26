@@ -550,6 +550,9 @@ ipcMain.on('open-update-window', () => showUpdateWindow());
 ipcMain.on('update-download', () => {
   autoUpdater.downloadUpdate().catch((err) => {
     console.error('[Updater] Download-Fehler:', err.message);
+    if (updateWindow) {
+      updateWindow.webContents.send('update-error', err.message);
+    }
   });
 });
 
@@ -748,6 +751,9 @@ function setupAutoUpdater() {
 
   autoUpdater.on('error', (err) => {
     console.error('[Updater] Fehler:', err.message);
+    if (updateWindow) {
+      updateWindow.webContents.send('update-error', err.message);
+    }
   });
 
   // Beim Start nach Updates suchen (mit Verzögerung)
