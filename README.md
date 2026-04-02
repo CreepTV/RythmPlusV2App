@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/version-1.1.2-a855f7?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-00b4d8?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/electron-34+-e84393?style=flat-square" alt="Electron">
-  <img src="https://img.shields.io/badge/platform-Windows-10b981?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-10b981?style=flat-square" alt="Platform">
 </p>
 
 <p align="center">
