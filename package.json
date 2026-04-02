@@ -30,11 +30,13 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "data/rythmplus-icon.png"
+      "icon": "data/rythmplus-icon.png",
+      "artifactName": "Rhythm-Plus-V2-Setup-${version}.${ext}"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "data/rythmplus-icon.png"
+      "icon": "data/rythmplus-icon.png",
+      "artifactName": "Rhythm-Plus-V2-${version}.${ext}"
     },
     "mac": {
       "target": "dmg",
