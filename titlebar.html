@@ -172,6 +172,14 @@
       -webkit-app-region: no-drag;
     }
 
+    .btn.song-url-btn {
+      width: 28px;
+      height: 28px;
+      margin-left: 4px;
+      padding: 0;
+      -webkit-app-region: no-drag;
+    }
+
     .profile-avatar {
       width: 20px;
       height: 20px;
@@ -211,6 +219,12 @@
         <rect y="0" width="12" height="1.5" rx="0.75" fill="rgba(255,255,255,0.7)"/>
         <rect y="4.25" width="12" height="1.5" rx="0.75" fill="rgba(255,255,255,0.7)"/>
         <rect y="8.5" width="12" height="1.5" rx="0.75" fill="rgba(255,255,255,0.7)"/>
+      </svg>
+    </button>
+    <button class="btn song-url-btn" id="btn-song-url" title="Song-URL öffnen">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <path d="M10 14a5 5 0 0 1 0-7l2-2a5 5 0 1 1 7 7l-1 1" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round"/>
+        <path d="M14 10a5 5 0 0 1 0 7l-2 2a5 5 0 1 1-7-7l1-1" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round"/>
       </svg>
     </button>
         <button class="btn profile" id="btn-profile" title="Profillink kopieren" style="display:none">
@@ -268,6 +282,11 @@
     document.getElementById('btn-menu').addEventListener('click', (e) => {
       const rect = e.currentTarget.getBoundingClientRect();
       window.windowControls.openMenu(Math.round(rect.left));
+    });
+
+    document.getElementById('btn-song-url').addEventListener('click', (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      window.windowControls.openSongUrlPopup(Math.round(rect.left));
     });
 
     window.windowControls.onUpdateAvailable(() => {

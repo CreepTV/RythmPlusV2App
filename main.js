@@ -26,6 +26,8 @@ let disclaimerWindow;
 let updateWindow;
 let menuPopupWindow = null;
 let settingsWindow = null;
+let songUrlPopupWindow = null;
+let songUrlPopupTarget = null;
 let pendingUpdateInfo = null;
 let titlebarView;
 let contentView;
@@ -270,6 +272,14 @@ function notifyTitlebarSong(songId, title) {
   titlebarView.webContents.send('current-song', songId ? { songId, title: title || '' } : null);
 }
 
+function getContextBySender(senderId) {
+  const gameEntry = [...gameWindows.values()].find(e => e.gameTitlebarView.webContents.id === senderId);
+  if (gameEntry) {
+    return { win: gameEntry.win, targetView: gameEntry.gameContentView };
+  }
+  return { win: mainWindow, targetView: contentView };
+}
+
 // Try to read the current song from the page – tries multiple methods
 async function probeSongId() {
   if (!contentView) return null;
@@ -508,6 +518,47 @@ function createWindow() {
     },
   });
   mainWindow.contentView.addChildView(contentView);
+
+  // Strip "Electron/x.x.x" from the User-Agent so sites and APIs treat
+  // the app like a regular browser (prevents auth/verification breakage).
+  const rhythmSession = contentView.webContents.session;
+  const cleanUA = rhythmSession.getUserAgent().replace(/\s*Electron\/[\d.]+/, '');
+  rhythmSession.setUserAgent(cleanUA);
+
+  // Fix CORS + missing Origin header: outgoing requests to rhythm-plus domains
+  // get a proper Origin/Referer so the API doesn't reject them silently.
+  rhythmSession.webRequest.onBeforeSendHeaders(
+    { urls: ['https://*.rhythm-plus.com/*', 'https://rhythm-plus.com/*'] },
+    (details, callback) => {
+      const headers = { ...details.requestHeaders };
+      if (!headers['Origin'] && !headers['origin']) {
+        headers['Origin'] = 'https://v2.rhythm-plus.com';
+      }
+      if (!headers['Referer'] && !headers['referer']) {
+        headers['Referer'] = 'https://v2.rhythm-plus.com/';
+      }
+      callback({ requestHeaders: headers });
+    }
+  );
+
+  // Allow cross-origin responses from rhythm-plus APIs (removes CORS blocking).
+  rhythmSession.webRequest.onHeadersReceived(
+    { urls: ['https://*.rhythm-plus.com/*', 'https://rhythm-plus.com/*'] },
+    (details, callback) => {
+      const headers = {};
+      // Copy all headers, but strip any existing CORS origin/credentials headers
+      // so we never end up with duplicate values (which browsers reject).
+      for (const [key, val] of Object.entries(details.responseHeaders)) {
+        const lower = key.toLowerCase();
+        if (lower === 'access-control-allow-origin' || lower === 'access-control-allow-credentials') continue;
+        headers[key] = val;
+      }
+      headers['Access-Control-Allow-Origin'] = ['https://v2.rhythm-plus.com'];
+      headers['Access-Control-Allow-Credentials'] = ['true'];
+      callback({ responseHeaders: headers });
+    }
+  );
+
   contentView.webContents.loadURL(getTargetUrl());
   startTitlePolling();
 
@@ -603,12 +654,8 @@ ipcMain.on('update-open-url', (_, url) => {
 });
 
 ipcMain.on('navigate-home', (event) => {
-  const gameEntry = [...gameWindows.values()].find(e => e.gameTitlebarView.webContents.id === event.sender.id);
-  if (gameEntry) {
-    gameEntry.gameContentView.webContents.loadURL(getTargetUrl());
-  } else if (contentView) {
-    contentView.webContents.loadURL(getTargetUrl());
-  }
+  const { targetView } = getContextBySender(event.sender.id);
+  if (targetView) targetView.webContents.loadURL(getTargetUrl());
 });
 
 ipcMain.on('close-disclaimer', () => {
@@ -642,9 +689,7 @@ ipcMain.on('navigate-to-song', () => {
 });
 
 ipcMain.on('window-control', (event, action) => {
-  // Find the correct window: game preview or main
-  const gameEntry = [...gameWindows.values()].find(e => e.gameTitlebarView.webContents.id === event.sender.id);
-  const win = gameEntry ? gameEntry.win : mainWindow;
+  const { win } = getContextBySender(event.sender.id);
   if (!win) return;
   switch (action) {
     case 'minimize': win.minimize(); break;
@@ -655,6 +700,77 @@ ipcMain.on('window-control', (event, action) => {
   }
 });
 
+ipcMain.on('open-song-url-popup', (event, x) => {
+  const { win, targetView } = getContextBySender(event.sender.id);
+  if (!win || !targetView) return;
+
+  if (songUrlPopupWindow) {
+    songUrlPopupWindow.close();
+    songUrlPopupWindow = null;
+    songUrlPopupTarget = null;
+    return;
+  }
+
+  const [wx, wy] = win.getPosition();
+  songUrlPopupTarget = targetView;
+  songUrlPopupWindow = new BrowserWindow({
+    x: wx + Math.round(x) - 126,
+    y: wy + TITLEBAR_HEIGHT,
+    width: 332,
+    height: 118,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    parent: win,
+    webPreferences: {
+      preload: path.join(__dirname, 'song-url-popup-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  songUrlPopupWindow.loadFile(path.join(__dirname, 'song-url-popup.html'));
+  songUrlPopupWindow.on('blur', () => {
+    if (songUrlPopupWindow) {
+      songUrlPopupWindow.close();
+    }
+  });
+  songUrlPopupWindow.on('closed', () => {
+    songUrlPopupWindow = null;
+    songUrlPopupTarget = null;
+  });
+});
+
+ipcMain.handle('submit-song-url', (_, rawUrl) => {
+  const input = typeof rawUrl === 'string' ? rawUrl.trim() : '';
+  if (!input) return { ok: false, error: 'Bitte eine URL eingeben.' };
+
+  let parsed;
+  try {
+    parsed = new URL(input);
+  } catch (_) {
+    return { ok: false, error: 'Ungültige URL.' };
+  }
+
+  if (!/^https?:$/i.test(parsed.protocol)) {
+    return { ok: false, error: 'Nur http/https wird unterstützt.' };
+  }
+
+  if (!songUrlPopupTarget) {
+    return { ok: false, error: 'Kein Ziel-Fenster verfügbar.' };
+  }
+
+  songUrlPopupTarget.webContents.loadURL(parsed.toString());
+  if (songUrlPopupWindow) songUrlPopupWindow.close();
+  return { ok: true };
+});
+
+ipcMain.on('close-song-url-popup', () => {
+  if (songUrlPopupWindow) songUrlPopupWindow.close();
+});
+
 // ── Menu popup ────────────────────────────────────────────────────────────────
 ipcMain.on('open-menu', (_, x) => {
   if (menuPopupWindow) { menuPopupWindow.close(); return; }
@@ -662,8 +778,8 @@ ipcMain.on('open-menu', (_, x) => {
   menuPopupWindow = new BrowserWindow({
     x: wx + Math.round(x),
     y: wy + TITLEBAR_HEIGHT,
-    width: 180,
-    height: 54,
+    width: 188,
+    height: 62,
     frame: false,
     transparent: true,
     resizable: false,

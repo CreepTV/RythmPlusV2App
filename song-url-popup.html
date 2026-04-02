@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      padding: 6px;
+      overflow: visible;
+    }
+
+    .popup {
+      margin: 0;
+      background: #171717;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 -1px 0 rgba(0, 0, 0, 0.2) inset,
+        0 8px 14px rgba(0, 0, 0, 0.32),
+        0 2px 6px rgba(0, 0, 0, 0.22);
+      border-radius: 8px;
+    }
+
+    .row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    input {
+      width: 100%;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 6px;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 12px;
+      padding: 0 9px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(255, 255, 255, 0.34);
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    button {
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 12px;
+      cursor: default;
+      white-space: nowrap;
+    }
+
+    button:hover { background: rgba(255, 255, 255, 0.13); }
+
+    .hint {
+      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.58);
+      font-size: 10px;
+      line-height: 1.25;
+      min-height: 13px;
+      user-select: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+<body>
+  <div class="popup">
+    <div class="row">
+      <input id="song-url" type="text" placeholder="https://v2.rhythm-plus.com/mapset/..." autocomplete="off" />
+      <button id="open-btn">Open</button>
+    </div>
+    <div class="hint" id="hint">Song-Link einfügen und mit Enter öffnen.</div>
+  </div>
+
+  <script>
+    const input = document.getElementById('song-url');
+    const hint = document.getElementById('hint');
+    const openBtn = document.getElementById('open-btn');
+
+    async function submit() {
+      const result = await window.songUrlPopup.submit(input.value || '');
+      if (!result || !result.ok) {
+        hint.textContent = result?.error || 'Konnte URL nicht öffnen.';
+        return;
+      }
+      hint.textContent = 'Wird geöffnet...';
+    }
+
+    openBtn.addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      } else if (e.key === 'Escape') {
+        window.songUrlPopup.close();
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => input.focus());
+  </script>
+</body>
+</html>
